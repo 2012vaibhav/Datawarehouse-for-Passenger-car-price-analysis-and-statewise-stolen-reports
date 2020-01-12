@@ -1,0 +1,131 @@
+library(rvest)
+library(purrr)
+library('gmp')
+library(xml2)
+library(tidyr)
+library(readr)
+library(readxl)
+
+
+#*************** Unstructured Data of New Cars and Its prices *******************************************#
+
+#Iterating through webpages
+Vehicle <- c("Ford","Gmc","Honda","Chevrolet","Toyota","Nissan","Dodge") 
+url_base <- "https://www.cars.com/research"
+
+#Addind Extracted data in to the Data frame
+map_df(Vehicle[1:7], function(i) {
+  pg1 <- paste(url_base,i,sep = "/") 
+  pg <-  WS1 <- html_session(pg1)
+  model <- paste(i,"")
+  
+  data.frame(Model=gsub(model,"",html_text(html_nodes(pg, "#make-model-list .cui-heading-4"))),
+             Price=extract_numeric(html_text(html_nodes(pg, ".make-model-card--msrp-range"))),
+             Year = "2018",
+             Make= i)
+}) -> Vehicle_df
+
+#Removing rows with NA Values
+Vehicle_df <- Vehicle_df[!is.na(Vehicle_df$Price),]
+
+#Export cleaned New Car Prices Data to csv
+write.csv(Vehicle_df, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Cleaned_New_Car_Prices.csv",row.names = FALSE)
+
+#********************** Structured Data set of Second Hand Cars and its Prices **************************#
+print("Importing Sencond Hand cars data will take time as it contains more than 8 lacs rows")
+Used_Cars <- read.csv("C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\true_car_listings.csv\\true_car_listings.csv") # Import xlsx
+
+# Removed VIN column
+Used_Cars <- Used_Cars[-6] 
+
+#Remove all data older than 2015
+Used_Cars <- Used_Cars[!Used_Cars$Year< 2015,]
+
+# Cleaning with respect to selected brands like "Gmc","Honda","Chevrolet","Toyota","Nissan","Dodge"
+Used_Cars <- Used_Cars[Used_Cars$Make == "Ford" | Used_Cars$Make == "GMC"
+                       | Used_Cars$Make == "Honda"   | Used_Cars$Make == "Chevrolet"
+                       | Used_Cars$Make == "Toyota"  | Used_Cars$Make == "Nissan"
+                       | Used_Cars$Make == "Dodge",]
+
+# Give full names to states from Abbrevation here state.Name is inbuild dataset
+names(state.name) <-state.abb
+Used_Cars$State <-state.name[Used_Cars$State]
+
+#Removed the states with Unkwon Abbrevations
+Used_Cars <- Used_Cars[!is.na(Used_Cars$State),]
+
+#Remove All NA columns from Dataset
+Used_Cars <- Used_Cars[!is.na(Used_Cars$Price) |!is.na(Used_Cars$Year)    |
+                         !is.na(Used_Cars$City)   |!is.na(Used_Cars$Mileage) |
+                         !is.na(Used_Cars$Make)   |!is.na(Used_Cars$Model),]
+
+#Export cleaned Used Data to csv
+write.csv(Used_Cars, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Cleaned_Used_Cars_Prices.csv",row.names = FALSE)
+
+# Structured Dataset for USA statewise Number of stolen Cars by Model from https://www.iii.org/table-archive/20900 Website 
+Theft_Car_Data <- html_text(html_nodes(read_html("https://www.iii.org/table-archive/20900"),'td'))
+
+#Removing string that contains brief description of Dataset
+value <- "Most"
+value2 <- "Highest"
+Theft_Car_Data<-Theft_Car_Data[-(grep(value2,Theft_Car_Data))]
+Theft_Car_Data<-Theft_Car_Data[-(grep(value,Theft_Car_Data))]
+
+#Merge All values in to matrix and split matrix in to sub Matrices 1st Matrix is for 2017, 8th = 2015, 9th = 2016
+for(i in 2:length(Theft_Car_Data)) output=rbind(output,matrix(Theft_Car_Data[[i]],ncol=3,byrow=T))
+output <- matrix(unlist(Theft_Car_Data), ncol = 3, byrow = TRUE)
+My_Matrix <- split(as.data.frame(output), rep(1:9, each = 20))
+
+Theft_Car_2017 <- My_Matrix$`1`[-1]
+Theft_Car_2016 <- My_Matrix$`9`[-1]
+Theft_Car_2015 <- My_Matrix$`8`[-1]
+Theft_Car_2017$Year <- 2017
+Theft_Car_2016$Year <- 2016
+Theft_Car_2015$Year <- 2015
+
+names(Theft_Car_2017)[1] <- paste("State")
+names(Theft_Car_2017)[2] <- paste("Car Stolen")
+names(Theft_Car_2016)[1] <- paste("State")
+names(Theft_Car_2016)[2] <- paste("Car Stolen")
+names(Theft_Car_2015)[1] <- paste("State")
+names(Theft_Car_2015)[2] <- paste("Car Stolen")
+
+Theft_Car_2017$`Car Stolen` <- extract_numeric(Theft_Car_2017$`Car Stolen`)
+Theft_Car_2016$`Car Stolen` <- extract_numeric(Theft_Car_2016$`Car Stolen`)
+Theft_Car_2015$`Car Stolen`<- extract_numeric(Theft_Car_2015$`Car Stolen`)
+
+Theft_Car_2017 <- Theft_Car_2017[order(Theft_Car_2017$`Car Stolen`,decreasing = TRUE),]
+Theft_Car_2016 <- Theft_Car_2016[order(Theft_Car_2016$`Car Stolen`,decreasing = TRUE),]
+Theft_Car_2015 <- Theft_Car_2015[order(Theft_Car_2015$`Car Stolen`,decreasing = TRUE),]
+
+rownames(Theft_Car_2015) <- NULL
+rownames(Theft_Car_2016) <- NULL
+rownames(Theft_Car_2017) <- NULL
+
+#Export cleaned Used Data to csv
+write.csv(Theft_Car_2015, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Theft_Car_2015.csv",row.names = FALSE)
+write.csv(Theft_Car_2016, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Theft_Car_2016.csv",row.names = FALSE)
+write.csv(Theft_Car_2017, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Theft_Car_2017.csv",row.names = FALSE)
+
+#********************** Structured data from Statista *********************(Which Type of vehicle stolen) ******************************
+url2 <- "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Statista Data\\statistic_id424163_us_-top-ten-frequently-stolen-passenger-vehicles-2017-by-model (1).xlsx"
+
+Type_Of_Vehicle_Stolen <- read_excel(url2,col_names = FALSE,col_types = NULL,sheet = 2,na="",skip = 5)
+names(Type_Of_Vehicle_Stolen)[1] <- paste("Model")
+names(Type_Of_Vehicle_Stolen)[2] <- paste("Stolen_Numbers")
+Type_Of_Vehicle_Stolen <- Type_Of_Vehicle_Stolen[!is.na(Type_Of_Vehicle_Stolen$Stolen_Numbers),]
+
+#Removed Values in Bracket
+Type_Of_Vehicle_Stolen$Model <- sapply(strsplit(Type_Of_Vehicle_Stolen$Model,split = " (",fixed = TRUE),function(x) (x[1]))
+Type_Of_Vehicle_Stolen$Make <- sapply(strsplit(Type_Of_Vehicle_Stolen$Model,split = " ",fixed = TRUE),function(x) (x[1]))
+Type_Of_Vehicle_Stolen$Model <- sapply(strsplit(Type_Of_Vehicle_Stolen$Model,split = " ",fixed = TRUE),function(x) (x[2]))
+View(Type_Of_Vehicle_Stolen)
+
+# Here Only car model for few were given as 'Pick up' so I have replace pickup with some actual pickup model of same Company
+Type_Of_Vehicle_Stolen$Model[1] <- "expedition"
+Type_Of_Vehicle_Stolen$Model[2]<- "Cruze"
+Type_Of_Vehicle_Stolen$Model[6]<- "Charger"
+Type_Of_Vehicle_Stolen$Model[7]<- "GMC Acadia"
+
+write.csv(Type_Of_Vehicle_Stolen, file = "C:\\Users\\Vaibhav\\Desktop\\Car DWBI Datasets\\Type_Of_Vehicle_Stolen.csv",row.names = FALSE)
+

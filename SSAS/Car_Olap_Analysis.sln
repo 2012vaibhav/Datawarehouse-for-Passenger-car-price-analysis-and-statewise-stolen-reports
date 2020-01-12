@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28307.106
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{D2ABAB84-BF74-430A-B69E-9DC6D40DDA17}") = "Car_Olap_Analysis", "Car_Olap_Analysis\Car_Olap_Analysis.dwproj", "{B897A8F8-42F5-42AB-9E16-7FD22CEF6443}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Development|Default = Development|Default
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B897A8F8-42F5-42AB-9E16-7FD22CEF6443}.Development|Default.ActiveCfg = Development
+		{B897A8F8-42F5-42AB-9E16-7FD22CEF6443}.Development|Default.Build.0 = Development
+		{B897A8F8-42F5-42AB-9E16-7FD22CEF6443}.Development|Default.Deploy.0 = Development
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {9800C0D4-5053-476E-897D-ADE5CD1482D1}
+	EndGlobalSection
+EndGlobal
